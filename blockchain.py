@@ -1,7 +1,8 @@
 from functools import reduce
 from typing import OrderedDict
 from collections import OrderedDict
-
+import json
+import pickle
 from hash_util import hash_string_265, hash_block
 
 # The reward we give to miners (for creating a new block)
@@ -22,6 +23,26 @@ open_transactions = []
 owner = 'Max'
 # Registered participants: Ourself + other people sending/ receiving coins
 participants = {'Max'}
+
+def load_data():
+    with open('blockchain.p', mode='rb') as f:
+        file_content = pickle.loads(f.read())
+        global blockchain
+        global open_transactions
+        blockchain = file_content['chain']
+        open_transactions = file_content['ot']
+
+
+load_data()
+
+def save_data():
+    with open('blockchain.p', mode='wb' ) as f:
+        save_data = {
+            'chain': blockchain,
+            'ot': open_transactions
+        }
+        f.write(pickle.dumps(save_data))
+
 
 def valid_proof(transactions, last_hash, proof):
     guess = (str(transactions) + str(last_hash) + str(proof)).encode()
@@ -109,6 +130,7 @@ def add_transaction(recipient, sender=owner, amount=1.0):
         open_transactions.append(transaction)
         participants.add(sender)
         participants.add(recipient)
+        save_data()
         return True
     return False
 
@@ -215,6 +237,7 @@ while waiting_for_input:
     elif user_choice == '2':
         if mine_block():
             open_transactions = []
+            save_data()
     elif user_choice == '3':
         print_blockchain_elements()
     elif user_choice == '4':
